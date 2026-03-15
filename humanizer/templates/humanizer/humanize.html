@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Humanizer — AI to Human Text</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'] },
+          colors: {
+            surface: { DEFAULT: '#18181b', card: '#27272a', border: '#3f3f46', muted: '#71717a' },
+            primary: { DEFAULT: '#2563eb', hover: '#1d4ed8', light: '#3b82f6' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; }
+    .card-panel { box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.2); }
+    .btn-primary { transition: background-color 0.15s ease, transform 0.05s ease; }
+    .btn-primary:hover { background-color: #1d4ed8; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-secondary { transition: background-color 0.15s ease, border-color 0.15s ease; }
+    .btn-secondary:hover { background-color: #3f3f46; border-color: #52525b; }
+  </style>
+</head>
+<body class="bg-surface text-zinc-100 min-h-screen antialiased">
+  <!-- Top accent -->
+  <div class="h-1 bg-primary"></div>
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Header -->
+    <header class="flex flex-wrap items-center justify-between gap-6 pb-8 border-b border-surface-border">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Humanizer</h1>
+        <p class="mt-1 text-sm text-surface-muted">Rewrite AI-generated text so it reads like natural human writing.</p>
+      </div>
+      <nav class="flex items-center gap-4">
+        <a href="{% url 'api_status' %}" class="text-sm font-medium text-surface-muted hover:text-white transition-colors">API status</a>
+      </nav>
+    </header>
+
+    <form method="POST" id="humanize-form" class="mt-10">
+      {% csrf_token %}
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+        <label class="text-sm text-surface-muted">
+          <span class="block mb-1">Style</span>
+          <select name="style" class="w-full bg-surface-card border border-surface-border rounded-lg px-3 py-2 text-zinc-100 focus:outline-none">
+            <option value="casual" {% if result and result.style == "casual" %}selected{% endif %}>Casual</option>
+            <option value="professional" {% if result and result.style == "professional" %}selected{% endif %}>Professional</option>
+            <option value="blog" {% if result and result.style == "blog" %}selected{% endif %}>Blog</option>
+            <option value="story" {% if result and result.style == "story" %}selected{% endif %}>Story</option>
+          </select>
+        </label>
+        <label class="text-sm text-surface-muted">
+          <span class="block mb-1">Audience</span>
+          <select name="audience" class="w-full bg-surface-card border border-surface-border rounded-lg px-3 py-2 text-zinc-100 focus:outline-none">
+            <option value="general" {% if result and result.audience == "general" %}selected{% endif %}>General</option>
+            <option value="student" {% if result and result.audience == "student" %}selected{% endif %}>Student</option>
+            <option value="client" {% if result and result.audience == "client" %}selected{% endif %}>Client/Stakeholder</option>
+            <option value="expert" {% if result and result.audience == "expert" %}selected{% endif %}>Expert</option>
+          </select>
+        </label>
+        <label class="text-sm text-surface-muted">
+          <span class="block mb-1">Purpose</span>
+          <input
+            type="text"
+            name="purpose"
+            value="{% if result %}{{ result.purpose }}{% else %}inform and engage{% endif %}"
+            class="w-full bg-surface-card border border-surface-border rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:outline-none"
+            placeholder="e.g., explain clearly to non-technical readers"
+          >
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Original -->
+        <div class="flex flex-col rounded-xl border border-surface-border bg-surface-card card-panel overflow-hidden min-h-[360px]">
+          <div class="px-5 py-3.5 border-b border-surface-border flex items-center justify-between bg-surface/80">
+            <span class="text-xs font-semibold text-surface-muted uppercase tracking-wider">Original text</span>
+            <span id="original-count" class="text-xs font-medium text-surface-muted tabular-nums">0 words</span>
+          </div>
+          <div class="flex-1 p-5 flex flex-col min-h-0">
+            <textarea name="text" id="original-text" rows="14" class="flex-1 w-full bg-transparent text-zinc-100 placeholder-zinc-500 resize-none focus:outline-none focus:ring-0 text-[15px] leading-relaxed"
+              placeholder="Paste your AI-generated text here…">{% if result %}{{ result.original }}{% endif %}</textarea>
+          </div>
+        </div>
+
+        <!-- Humanized output -->
+        <div class="flex flex-col rounded-xl border border-surface-border bg-surface-card card-panel overflow-hidden min-h-[360px]">
+          <div class="px-5 py-3.5 border-b border-surface-border flex items-center justify-between bg-surface/80">
+            <span class="text-xs font-semibold text-surface-muted uppercase tracking-wider">Humanized output</span>
+            {% if result %}
+              <span id="humanized-count" class="text-xs font-medium text-surface-muted tabular-nums">{{ result.humanized_words }} words</span>
+            {% else %}
+              <span id="humanized-count" class="text-xs font-medium text-surface-muted tabular-nums hidden">0 words</span>
+            {% endif %}
+          </div>
+          <div class="flex-1 p-5 min-h-0 overflow-auto">
+            {% if result %}
+              <p id="humanized-content" class="whitespace-pre-wrap text-zinc-100 text-[15px] leading-relaxed">{{ result.humanized }}</p>
+              <input type="hidden" id="humanized-text" value="{{ result.humanized|escape }}">
+            {% else %}
+              <p id="humanized-placeholder" class="text-surface-muted text-[15px] leading-relaxed">Output will appear here after you run humanization.</p>
+              <p id="humanized-content" class="whitespace-pre-wrap text-zinc-100 text-[15px] leading-relaxed hidden"></p>
+              <input type="hidden" id="humanized-text" value="">
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="submit" class="btn-primary px-6 py-3 rounded-lg font-semibold bg-primary text-white shadow-sm">
+          Humanize text
+        </button>
+        {% if result %}
+          <button type="button" id="copy-btn" class="btn-secondary px-6 py-3 rounded-lg font-medium bg-surface-card text-zinc-100 border border-surface-border">
+            Copy output
+          </button>
+          <a href="{% url 'home' %}" class="btn-secondary inline-flex px-6 py-3 rounded-lg font-medium bg-surface-card text-zinc-100 border border-surface-border">
+            Clear all
+          </a>
+        {% endif %}
+      </div>
+    </form>
+
+    {% if error %}
+      <div class="mt-8 p-4 rounded-xl bg-red-950/40 border border-red-900/60 text-red-200 text-sm" role="alert">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    {% if result %}
+      <div class="mt-8 pt-6 border-t border-surface-border text-sm text-surface-muted">
+        Quality check: read once for factual accuracy, once for tone match, and once aloud for flow.
+      </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="mt-16 pt-8 border-t border-surface-border text-center text-sm text-surface-muted">
+      Humanizer — AI to human text. Use responsibly.
+    </footer>
+  </div>
+
+  <script>
+    (function() {
+      var originalText = document.getElementById('original-text');
+      var originalCount = document.getElementById('original-count');
+
+      function countWords(s) { return s.trim() ? s.trim().split(/\s+/).length : 0; }
+      if (originalText && originalCount) {
+        function updateOriginalCount() {
+          var n = countWords(originalText.value);
+          originalCount.textContent = n + ' word' + (n !== 1 ? 's' : '');
+        }
+        originalText.addEventListener('input', updateOriginalCount);
+        updateOriginalCount();
+      }
+
+      var copyBtn = document.getElementById('copy-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+          var el = document.getElementById('humanized-text');
+          var text = el && el.value ? el.value : (document.getElementById('humanized-content') && document.getElementById('humanized-content').innerText);
+          if (!text) return;
+          navigator.clipboard.writeText(text).then(function() {
+            var label = copyBtn.textContent;
+            copyBtn.textContent = 'Copied';
+            setTimeout(function() { copyBtn.textContent = label; }, 2000);
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

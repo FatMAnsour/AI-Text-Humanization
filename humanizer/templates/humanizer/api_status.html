@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Status — Humanizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'] },
+          colors: {
+            surface: { DEFAULT: '#18181b', card: '#27272a', border: '#3f3f46', muted: '#71717a' },
+            primary: { DEFAULT: '#2563eb', hover: '#1d4ed8' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; }
+    .status-card { box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.2); }
+  </style>
+</head>
+<body class="bg-surface text-zinc-100 min-h-screen antialiased">
+  <div class="h-1 bg-primary"></div>
+
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <header class="pb-8 border-b border-surface-border">
+      <a href="{% url 'home' %}" class="inline-flex items-center gap-2 text-sm font-medium text-surface-muted hover:text-white transition-colors mb-6">
+        <span>←</span> Back to Humanizer
+      </a>
+      <h1 class="text-2xl font-bold tracking-tight text-white">API status</h1>
+      <p class="mt-1 text-sm text-surface-muted">Each provider is tested with a minimal request. Groq is required; Mistral and Cohere are used for stack humanization.</p>
+    </header>
+
+    <ul class="mt-8 space-y-3">
+      {% for r in results %}
+      <li class="status-card rounded-xl border border-surface-border overflow-hidden {% if r.ok %}bg-emerald-950/20 border-emerald-800/50{% else %}bg-surface-card{% endif %}">
+        <div class="px-5 py-4 flex items-center justify-between gap-4">
+          <span class="font-semibold text-white">{{ r.name }}</span>
+          {% if r.key_set %}
+            {% if r.ok %}
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-400">OK</span>
+            {% else %}
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-red-500/20 px-3 py-1 text-xs font-medium text-red-400">Fail</span>
+            {% endif %}
+          {% else %}
+            <span class="text-xs font-medium text-surface-muted">No key set</span>
+          {% endif %}
+        </div>
+        {% if r.key_set and not r.ok and r.message %}
+          <div class="px-5 pb-4 pt-0">
+            <p class="text-sm text-surface-muted break-all">{{ r.message }}</p>
+          </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+
+
+    <footer class="mt-12 pt-8 border-t border-surface-border text-center text-sm text-surface-muted">
+      Humanizer — AI to human text.
+    </footer>
+  </div>
+</body>
+</html>

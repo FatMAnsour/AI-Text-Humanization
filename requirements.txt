@@ -1,0 +1,6 @@
+Django>=5.0
+openai>=1.0
+python-dotenv>=1.0
+# Optional: for compute_human_stats (dataset-driven burstiness targets)
+# pip install datasets  then: python manage.py compute_human_stats
+datasets>=2.14.0

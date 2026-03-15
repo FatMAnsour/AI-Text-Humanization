@@ -1,0 +1,12 @@
+{
+  "source": "jonathanli/human-essays-reddit",
+  "split": "train",
+  "num_samples": 15000,
+  "num_sentences": 800963,
+  "mean_sentence_length": 10.87,
+  "std_sentence_length": 8.39,
+  "pct_short_sentences": 0.3,
+  "pct_long_sentences": 0.136,
+  "short_max_words": 5,
+  "long_min_words": 20
+}
