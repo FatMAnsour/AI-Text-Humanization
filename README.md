@@ -21,15 +21,15 @@ A **Django web app** that rewrites AI-generated text so it reads more like human
 
 2. **Providers**
    - **Groq (default)**  
-     Uses Groq’s API (e.g. Llama). Supports 1 pass or 2 passes. With 2 passes you can use “key-point rewrite”: first pass extracts 5–8 short phrases, second pass writes one paragraph from those phrases only, which helps break the original structure.
+     Uses Groq’s API. Supports 1 pass or 2 passes. With 2 passes you can use “key-point rewrite”: first pass extracts 5–8 short phrases, second pass writes one paragraph from those phrases only, which helps break the original structure.
    - **Stack4**  
      Runs the text through Groq, then Mistral, then Cohere. Each step uses the same anti-detection rules; later steps use higher temperature and penalties for more variation.
 
 3. **Style stats (optional)**  
-   A management command reads a Hugging Face dataset, computes human-writing stats (mean/std sentence length, % short/long sentences), and saves them to `humanizer/data/human_style_stats.json`. The humanizer uses these in the prompt for burstiness targets. If the file is missing or stats are rejected (e.g. too formal), built-in evasion-friendly defaults are used.
+   A management command reads a Hugging Face dataset, computes human-writing stats (mean/std sentence length, % short/long sentences), and saves them to `humanizer/data/human_style_stats.json`. The humanizer uses these in the prompt for burstiness targets. If the file is missing or stats are rejected, built-in evasion-friendly defaults are used.
 
 4. **Post-processing**  
-   After the LLM rewrite: strip editor notes and markdown, replace formal phrases (e.g. “furthermore” → “also”), remove em dashes and semicolons, then apply light “noise” (occasional filler words, dropped punctuation, optional comma drop, sentence merges) to reduce uniformity.
+   After the LLM rewrite: strip editor notes and markdown, replace formal phrases, remove em dashes and semicolons, then apply light “noise” (occasional filler words, dropped punctuation, optional comma drop, sentence merges) to reduce uniformity.
 
 ---
 
@@ -82,10 +82,10 @@ A **Django web app** that rewrites AI-generated text so it reads more like human
 ## Usage
 
 - **Web UI**  
-  Paste text, choose style (e.g. casual, professional), audience, and purpose. Submit to get humanized text and word counts. Use the detector links to check the result on ZeroGPT/GPTZero.
+  Paste text, choose style (casual, professional), audience, and purpose. Submit to get humanized text and word counts. Use the detector links to check the result on ZeroGPT/GPTZero.
 
 - **Optional: human style stats from a dataset**  
-  To tune burstiness from real human text (e.g. Reddit):
+  To tune burstiness from real human text (ex: Reddit):
   ```bash
   python manage.py compute_human_stats \
     --dataset jonathanli/human-essays-reddit \
